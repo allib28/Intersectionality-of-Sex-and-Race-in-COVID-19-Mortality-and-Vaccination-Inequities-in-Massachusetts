@@ -19,8 +19,8 @@ of Sex and Race in COVID-19 Mortality and Vaccination Inequities in Massachusett
 
 ## Authors
 
-Allison Boretsky 
-Victoria Fisher
+Allison Boretsky, 
+Victoria Fisher,
 Nadia N. Abuelezam
 
 *Please Contact Allison Boretsky (allisonboretsky@gmail.com) for code questions and data requests
