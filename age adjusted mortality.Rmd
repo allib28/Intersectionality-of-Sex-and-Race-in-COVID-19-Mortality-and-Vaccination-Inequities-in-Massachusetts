@@ -1,0 +1,462 @@
+---
+title: "Mortality Age-Adjusted"
+author: "Allison Boretsky"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading packages
+```{r, include=FALSE}
+library(pacman)
+p_load(tidyverse,
+       dplyr,
+       ggplot2,
+       gtsummary,
+       stats,
+       binom,
+       readxl,
+        rio,          # File import
+  here,         # File locator
+  skimr,        # get overview of data
+  tidyverse,    # data management + ggplot2 graphics 
+  gtsummary,    # summary statistics and tests
+  rstatix,      # summary statistics and statistical tests
+  janitor,      # adding totals and percents to tables
+  scales,       # easily convert proportions to percents  
+  flextable)
+
+dfmain<-read_excel("Boretsky_COVID_Demographics_2020-2023_.xlsx")
+
+```
+
+# Creating new data set
+```{r, include=FALSE} 
+#creating data set grouped by new age groups 
+
+df2<-filter(dfmain,Month=="Total/month")
+df2[df2=="*"]<-"0"
+as.numeric(df2$`0-19`)
+df2<-mutate(df2,`0-29`=`0-19`+as.numeric(`20-29`))
+df2<-mutate(df2,`30-49`=as.numeric(`30-39`)+as.numeric(`40-49`))
+df2<-mutate(df2,`50-69`=as.numeric(`50-59`)+as.numeric(`60-69`))
+df2<-mutate(df2,`70+`=as.numeric(`70-79`)+as.numeric(`80+`))
+df3<-select(df2,`0-29`,`30-49`,`50-69`,`70+`,Race, Gender, `Total/month`)
+```
+
+# Age Specific Calculations
+
+## Asian
+```{r, include=FALSE}
+ #female
+asianF<-filter(df3, Race=="Asian", Gender=="Female")
+
+#age group 0-29 mortality rate 
+arf1<-((asianF$`0-29`/99598)*100000)
+(100000/99598)*(asianF$`0-29`+(1.96*sqrt(asianF$`0-29`))) #upper confidence interval
+(100000/99598)*(asianF$`0-29`-(1.96*sqrt(asianF$`0-29`))) #lower confidence interval
+
+#age group 30-49
+arf2<-((asianF$`30-49`/86057)*100000)
+(100000/86057)*(asianF$`30-49`+(1.96*sqrt(asianF$`30-49`))) #upper CI
+(100000/86057)*(asianF$`30-49`-(1.96*sqrt(asianF$`30-49`))) #lower CI
+
+#age group 50-69
+arf3<-((asianF$`50-69`/47443)*100000) 
+(100000/47443)*(asianF$`50-69`+(1.96*sqrt(asianF$`50-69`)))
+(100000/47443)*(asianF$`50-69`-(1.96*sqrt(asianF$`50-69`)))
+
+#age group 70+
+arf4<-((asianF$`70+`/16110)*100000)
+(100000/16110)*(asianF$`70+`+(1.96*sqrt(asianF$`70+`)))
+(100000/16110)*(asianF$`70+`-(1.96*sqrt(asianF$`70+`)))
+
+    #male 
+asianM<-filter(df3, Race=="Asian", Gender=="Male")
+
+am1<-(asianM$`0-29`/96416)*100000
+(100000/96416)*(asianM$`0-29`+(1.96*sqrt(asianM$`0-29`)))
+(100000/96416)*(asianM$`0-29`-(1.96*sqrt(asianM$`0-29`)))
+
+am2<-(asianM$`30-49`/76988)*100000
+(100000/76988)*(asianM$`30-49`+(1.96*sqrt(asianM$`30-49`)))
+(100000/76988)*(asianM$`30-49`-(1.96*sqrt(asianM$`30-49`)))
+
+am3<-(asianM$`50-69`/42905)*100000
+(100000/42905)*(asianM$`50-69`+(1.96*sqrt(asianM$`50-69`)))
+(100000/42905)*(asianM$`50-69`-(1.96*sqrt(asianM$`50-69`)))
+
+am4<-(asianM$`70+`/13297)*100000
+(100000/13297)*(asianM$`70+`+(1.96*sqrt(asianM$`70+`)))
+(100000/13297)*(asianM$`70+`-(1.96*sqrt(asianM$`70+`)))
+
+##AGE STANDARD (sum of all age groups)
+    #female
+arf<-arf1*.417872+arf2*.305776+arf3*.18423+arf4*.092122 #decimals are population standard for each age group
+arf+(1.96*(arf/(sqrt(269))))
+arf-(1.96*(arf/(sqrt(269)))) 
+    #male 
+am<-am1*.417872+am2*.305776+am3*.18423+am4*.092122
+am+(1.96*(am/(sqrt(381))))
+am-(1.96*(am/(sqrt(381))))
+ 
+ #totals (male and female)
+#0-29 
+at1<-((asianM$`0-29`+asianF$`0-29`)/196014)*100000 
+(100000/196014)*((asianM$`0-29`+asianF$`0-29`)+(1.96*sqrt((asianM$`0-29`+asianF$`0-29`))))
+(100000/196014)*((asianM$`0-29`+asianF$`0-29`)-(1.96*sqrt((asianM$`0-29`+asianF$`0-29`))))
+#30-49
+at2<-((asianM$`30-49`+asianF$`30-49`)/163045)*100000
+(100000/163045)*((asianM$`30-49`+asianF$`30-49`)+(1.96*sqrt((asianM$`30-49`+asianF$`30-49`))))
+(100000/163045)*((asianM$`30-49`+asianF$`30-49`)-(1.96*sqrt((asianM$`30-49`+asianF$`30-49`))))
+#50-69
+at3<-((asianM$`50-69`+asianF$`50-69`)/90348)*100000
+(100000/90348)*((asianM$`50-69`+asianF$`50-69`)+(1.96*sqrt((asianM$`50-69`+asianF$`50-69`))))
+(100000/90348)*((asianM$`50-69`+asianF$`50-69`)-(1.96*sqrt((asianM$`50-69`+asianF$`50-69`))))
+#70+
+at4<-((asianM$`70+`+asianF$`70+`)/29407)*100000
+(100000/29407)*((asianM$`70+`+asianF$`70+`)+(1.96*sqrt((asianM$`70+`+asianF$`70+`))))
+(100000/29407)*((asianM$`70+`+asianF$`70+`)-(1.96*sqrt((asianM$`70+`+asianF$`70+`))))
+
+  #age standardized for total
+at<-at1*.417872+at2*.305776+at3*.18423+at4*.092122
+at+(1.96*(at/(sqrt(650))))
+at-(1.96*(at/(sqrt(650))))
+```
+
+## Black
+```{r, include=FALSE}
+ #female
+blackF<-filter(df3, Race=="Black", Gender=="Female")
+bf1<-(blackF$`0-29`/101781)*100000
+(100000/101781)*(blackF$`0-29`+(1.96*sqrt(blackF$`0-29`)))
+(100000/101781)*(blackF$`0-29`-(1.96*sqrt(blackF$`0-29`)))
+
+bf2<-(blackF$`30-49`/66286)*100000
+(100000/66286)*(blackF$`30-49`+(1.96*sqrt(blackF$`30-49`)))
+(100000/66286)*(blackF$`30-49`-(1.96*sqrt(blackF$`30-49`)))
+
+bf3<-(blackF$`50-69`/54997)*100000
+(100000/54997)*(blackF$`50-69`+(1.96*sqrt(blackF$`50-69`)))
+(100000/54997)*(blackF$`50-69`-(1.96*sqrt(blackF$`50-69`)))
+
+bf4<-(blackF$`70+`/19129)*100000
+(100000/19129)*(blackF$`70+`+(1.96*sqrt(blackF$`70+`)))
+(100000/19129)*(blackF$`70+`-(1.96*sqrt(blackF$`70+`)))
+
+    #male 
+blackM<-filter(df3, Race=="Black", Gender=="Male")
+bm1<-(blackM$`0-29`/101821)*100000
+(100000/101821)*(blackM$`0-29`+(1.96*sqrt(blackM$`0-29`)))
+(100000/101821)*(blackM$`0-29`-(1.96*sqrt(blackM$`0-29`)))
+
+bm2<-(blackM$`30-49`/65357)*100000
+(100000/65357)*(blackM$`30-49`+(1.96*sqrt(blackM$`0-29`)))
+(100000/65357)*(blackM$`30-49`-(1.96*sqrt(blackM$`0-29`)))
+
+bm3<-(blackM$`50-69`/49563)*100000
+(100000/49563)*(blackM$`50-69`+(1.96*sqrt(blackM$`50-69`)))
+(100000/49563)*(blackM$`50-69`-(1.96*sqrt(blackM$`50-69`)))
+
+bm4<-(blackM$`70+`/12293)*100000
+(100000/12293)*(blackM$`70+`+(1.96*sqrt(blackM$`70+`)))
+(100000/12293)*(blackM$`70+`-(1.96*sqrt(blackM$`70+`)))
+
+##AGE STANDARD (sum of all age groups)
+bf<-bf1*.417872+bf2*.305776+bf3*.18423+bf4*.092122
+bf+(1.96*(bf/(sqrt(702))))
+bf-(1.96*(bf/(sqrt(702))))
+
+bm<-bm1*.417872+bm2*.305776+bm3*.18423+bm4*.092122
+bm+(1.96*(bm/(sqrt(755))))
+bm-(1.96*(bm/(sqrt(755))))
+
+  #totals 
+#0-29 
+bt1<-((blackM$`0-29`+blackF$`0-29`)/203602)*100000 
+(100000/203602)*((blackM$`0-29`+blackF$`0-29`)+(1.96*sqrt((blackM$`0-29`+blackF$`0-29`))))
+(100000/203602)*((blackM$`0-29`+blackF$`0-29`)-(1.96*sqrt((blackM$`0-29`+blackF$`0-29`))))
+#30-49
+bt2<-((blackM$`30-49`+blackF$`30-49`)/131643)*100000
+(100000/131643)*((blackM$`30-49`+blackF$`30-49`)+(1.96*sqrt((blackM$`30-49`+blackF$`30-49`))))
+(100000/131643)*((blackM$`30-49`+blackF$`30-49`)-(1.96*sqrt((blackM$`30-49`+blackF$`30-49`))))
+#50-69
+bt3<-((blackM$`50-69`+blackF$`50-69`)/104560)*100000
+(100000/104560)*((blackM$`50-69`+blackF$`50-69`)+(1.96*sqrt((blackM$`50-69`+blackF$`50-69`))))
+(100000/104560)*((blackM$`50-69`+blackF$`50-69`)-(1.96*sqrt((blackM$`50-69`+blackF$`50-69`))))
+#70+
+bt4<-((blackM$`70+`+blackF$`70+`)/31422)*100000
+(100000/31422)*((blackM$`70+`+blackF$`70+`)+(1.96*sqrt((blackM$`70+`+blackF$`70+`))))
+(100000/31422)*((blackM$`70+`+blackF$`70+`)-(1.96*sqrt((blackM$`70+`+blackF$`70+`))))
+
+#age standardized 
+bt<-bt1*.417872+bt2*.305776+bt3*.18423+bt4*.092122
+bt+(1.96*(bt/(sqrt(1457))))
+bt-(1.96*(bt/(sqrt(1457))))
+```
+
+## White
+```{r, include=FALSE}
+#female
+whiteF<-filter(df3, Race=="White", Gender=="Female")
+wf1<-(whiteF$`0-29`/777784)*100000
+(100000/777784)*(whiteF$`0-29`+(1.96*sqrt(whiteF$`0-29`)))
+(100000/777784)*(whiteF$`0-29`-(1.96*sqrt(whiteF$`0-29`)))
+
+wf2<-(whiteF$`30-49`/597517)*100000
+(100000/597517)*(whiteF$`30-49`+(1.96*sqrt(whiteF$`30-49`)))
+(100000/597517)*(whiteF$`30-49`-(1.96*sqrt(whiteF$`30-49`)))
+
+wf3<-(whiteF$`50-69`/740563)*100000
+(100000/740563)*(whiteF$`50-69`+(1.96*sqrt(whiteF$`50-69`)))
+(100000/740563)*(whiteF$`50-69`-(1.96*sqrt(whiteF$`50-69`)))
+
+wf4<-(whiteF$`70+`/385198)*100000
+(100000/385198)*(whiteF$`70+`+(1.96*sqrt(whiteF$`70+`)))
+(100000/385198)*(whiteF$`70+`-(1.96*sqrt(whiteF$`70+`)))
+
+    #male 
+whiteM<-filter(df3, Race=="White", Gender=="Male")
+wm1<-(whiteM$`0-29`/795561)*100000
+(100000/795561)*(whiteM$`0-29`+(1.96*sqrt(whiteF$`0-29`)))
+(100000/795561)*(whiteM$`0-29`-(1.96*sqrt(whiteF$`0-29`)))
+
+wm2<-(whiteM$`30-49`/589632)*100000
+(100000/589632)*(whiteM$`30-49`+(1.96*sqrt(whiteF$`30-49`)))
+(100000/589632)*(whiteM$`30-49`-(1.96*sqrt(whiteF$`30-49`)))
+
+wm3<-(whiteM$`50-69`/707964)*100000
+(100000/707964)*(whiteM$`50-69`+(1.96*sqrt(whiteM$`50-69`)))
+(100000/707964)*(whiteM$`50-69`-(1.96*sqrt(whiteM$`50-69`)))
+
+wm4<-(whiteM$`70+`/282590)*100000
+(100000/282590)*(whiteM$`70+`+(1.96*sqrt(whiteM$`70+`)))
+(100000/282590)*(whiteM$`70+`-(1.96*sqrt(whiteM$`70+`)))
+
+##AGE STANDARD (sum of all age groups)
+wf<-wf1*.417872+wf2*.305776+wf3*.18423+wf4*.092122
+wf+(1.96*(wf/(sqrt(9020))))
+wf-(1.96*(wf/(sqrt(9020))))
+
+wm<-wm1*.417872+wm2*.305776+wm3*.18423+wm4*.092122
+wm+(1.96*(wm/(sqrt(9006))))
+wm-(1.96*(wm/(sqrt(9006))))
+
+  #totals 
+#0-29 
+wt1<-((whiteM$`0-29`+whiteF$`0-29`)/1573345)*100000 
+(100000/1573345)*((whiteM$`0-29`+whiteF$`0-29`)+(1.96*sqrt((whiteM$`0-29`+whiteF$`0-29`))))
+(100000/1573345)*((whiteM$`0-29`+whiteF$`0-29`)-(1.96*sqrt((whiteM$`0-29`+whiteF$`0-29`))))
+#30-49
+wt2<-((whiteM$`30-49`+whiteF$`30-49`)/1187149)*100000
+(100000/1187149)*((whiteM$`30-49`+whiteF$`30-49`)+(1.96*sqrt((whiteM$`30-49`+whiteF$`30-49`))))
+(100000/1187149)*((whiteM$`30-49`+whiteF$`30-49`)-(1.96*sqrt((whiteM$`30-49`+whiteF$`30-49`))))
+#50-69
+wt3<-((whiteM$`50-69`+whiteF$`50-69`)/1448527)*100000
+(100000/1448527)*((whiteM$`50-69`+whiteF$`50-69`)+(1.96*sqrt((whiteM$`50-69`+whiteF$`50-69`))))
+(100000/1448527)*((whiteM$`50-69`+whiteF$`50-69`)-(1.96*sqrt((whiteM$`50-69`+whiteF$`50-69`))))
+#70+
+wt4<-((whiteM$`70+`+whiteF$`70+`)/667788)*100000
+(100000/667788)*((whiteM$`70+`+whiteF$`70+`)+(1.96*sqrt((whiteM$`70+`+whiteF$`70+`))))
+(100000/667788)*((whiteM$`70+`+whiteF$`70+`)-(1.96*sqrt((whiteM$`70+`+whiteF$`70+`))))
+
+#age standardized 
+wt<-wt1*.417872+wt2*.305776+wt3*.18423+wt4*.092122
+wt+(1.96*(wt/(sqrt(18026))))
+wt-(1.96*(wt/(sqrt(18026))))
+```
+
+## Hispanic
+```{r, include=FALSE}
+   #female
+hispF<-filter(df3, Race=="Hispanic", Gender=="Female")
+hf1<-(hispF$`0-29`/218369)*100000
+(100000/218369)*(hispF$`0-29`+(1.96*sqrt(hispF$`0-29`)))
+(100000/218369)*(hispF$`0-29`-(1.96*sqrt(hispF$`0-29`)))
+
+hf2<-(hispF$`30-49`/124598)*100000
+(100000/124598)*(hispF$`30-49`+(1.96*sqrt(hispF$`30-49`)))
+(100000/124598)*(hispF$`30-49`-(1.96*sqrt(hispF$`30-49`)))
+
+hf3<-(hispF$`50-69`/70806)*100000
+(100000/70806)*(hispF$`50-69`+(1.96*sqrt(hispF$`50-69`)))
+(100000/70806)*(hispF$`50-69`-(1.96*sqrt(hispF$`50-69`)))
+
+hf4<-(hispF$`70+`/20284)*100000
+(100000/20284)*(hispF$`70+`+(1.96*sqrt(hispF$`70+`)))
+(100000/20284)*(hispF$`70+`-(1.96*sqrt(hispF$`70+`)))
+
+    #male 
+hispM<-filter(df3, Race=="Hispanic", Gender=="Male")
+hm1<-(hispM$`0-29`/228601)*100000
+(100000/228601)*(hispM$`0-29`+(1.96*sqrt(hispM$`0-29`)))
+(100000/228601)*(hispM$`0-29`-(1.96*sqrt(hispM$`0-29`)))
+
+hm2<-(hispM$`30-49`/125605)*100000
+(100000/125605)*(hispM$`30-49`+(1.96*sqrt(hispM$`30-49`)))
+(100000/125605)*(hispM$`30-49`-(1.96*sqrt(hispM$`30-49`)))
+
+hm3<-(hispM$`50-69`/62623)*100000
+(100000/62623)*(hispM$`50-69`+(1.96*sqrt(hispM$`50-69`)))
+(100000/62623)*(hispM$`50-69`-(1.96*sqrt(hispM$`50-69`)))
+
+hm4<-(hispM$`70+`/13548)*100000
+(100000/13548)*(hispM$`70+`+(1.96*sqrt(hispM$`70+`)))
+(100000/13548)*(hispM$`70+`-(1.96*sqrt(hispM$`70+`)))
+
+##AGE STANDARD (sum of all age groups)
+hf<-hf1*.417872+hf2*.305776+hf3*.18423+hf4*.092122
+hf+(1.96*(hf/(sqrt(952))))
+hf-(1.96*(hf/(sqrt(952))))
+
+hm<-hm1*.417872+hm2*.305776+hm3*.18423+hm4*.092122
+hm+(1.96*(hm/(sqrt(1274))))
+hm-(1.96*(hm/(sqrt(1274))))
+
+  #totals 
+#0-29 
+ht1<-((hispM$`0-29`+hispF$`0-29`)/446970)*100000 
+(100000/446970)*((hispM$`0-29`+hispF$`0-29`)+(1.96*sqrt((hispM$`0-29`+hispF$`0-29`))))
+(100000/446970)*((hispM$`0-29`+hispF$`0-29`)-(1.96*sqrt((hispM$`0-29`+hispF$`0-29`))))
+#30-49
+ht2<-((hispM$`30-49`+hispF$`30-49`)/250203)*100000
+(100000/250203)*((hispM$`30-49`+hispF$`30-49`)+(1.96*sqrt((hispM$`30-49`+hispF$`30-49`))))
+(100000/250203)*((hispM$`30-49`+hispF$`30-49`)-(1.96*sqrt((hispM$`30-49`+hispF$`30-49`))))
+#50-69
+ht3<-((hispM$`50-69`+hispF$`50-69`)/133429)*100000
+(100000/133429)*((hispM$`50-69`+hispF$`50-69`)+(1.96*sqrt((hispM$`50-69`+hispF$`50-69`))))
+(100000/133429)*((hispM$`50-69`+hispF$`50-69`)-(1.96*sqrt((hispM$`50-69`+hispF$`50-69`))))
+#70+
+ht4<-((hispM$`70+`+hispF$`70+`)/33832)*100000
+(100000/33832)*((hispM$`70+`+hispF$`70+`)+(1.96*sqrt((hispM$`70+`+hispF$`70+`))))
+(100000/33832)*((hispM$`70+`+hispF$`70+`)-(1.96*sqrt((hispM$`70+`+hispF$`70+`))))
+
+#age standardized 
+ht<-ht1*.417872+ht2*.305776+ht3*.18423+ht4*.092122
+ht+(1.96*(ht/(sqrt(2226))))
+ht-(1.96*(ht/(sqrt(2226))))
+```
+
+## Other 
+```{r, include=FALSE}
+ #female
+otherF<-filter(df3, Race=="Other", Gender=="Female")
+of1<-((otherF$`0-29`/14051)*100000)
+(100000/14051)*(otherF$`0-29`+(1.96*sqrt(otherF$`0-29`)))
+(100000/14051)*(otherF$`0-29`-(1.96*sqrt(otherF$`0-29`)))
+
+of2<-((otherF$`30-49`/9417)*100000)
+(100000/9417)*(otherF$`30-49`+(1.96*sqrt(otherF$`30-49`)))
+(100000/9417)*(otherF$`30-49`-(1.96*sqrt(otherF$`30-49`)))
+
+of3<-((otherF$`50-69`/7213)*100000)
+(100000/7213)*(otherF$`50-69`+(1.96*sqrt(otherF$`50-69`)))
+(100000/7213)*(otherF$`50-69`-(1.96*sqrt(otherF$`50-69`)))
+
+of4<-((otherF$`70+`/2501)*100000)
+(100000/2501)*(otherF$`70+`+(1.96*sqrt(otherF$`70+`)))
+(100000/2501)*(otherF$`70+`-(1.96*sqrt(otherF$`70+`)))
+
+  #male 
+otherM<-filter(df3, Race=="Other", Gender=="Male")
+om1<-(otherM$`0-29`/13635)*100000
+(100000/13635)*(otherM$`0-29`+(1.96*sqrt(otherM$`0-29`)))
+(100000/13635)*(otherM$`0-29`-(1.96*sqrt(otherM$`0-29`)))
+
+om2<-(otherM$`30-49`/8843)*100000
+(100000/8843)*(otherM$`30-49`+(1.96*sqrt(otherM$`30-49`)))
+(100000/8843)*(otherM$`30-49`-(1.96*sqrt(otherM$`30-49`)))
+
+om3<-(otherM$`50-69`/6630)*100000
+(100000/6630)*(otherM$`50-69`+(1.96*sqrt(otherM$`50-69`)))
+(100000/6630)*(otherM$`50-69`-(1.96*sqrt(otherM$`50-69`)))
+
+om4<-(otherM$`70+`/1692)*100000
+(100000/1692)*(otherM$`70+`+(1.96*sqrt(otherM$`70+`)))
+(100000/1692)*(otherM$`70+`-(1.96*sqrt(otherM$`70+`)))
+
+##AGE STANDARD (sum of all age groups)
+of<-of1*.417872+of2*.305776+of3*.18423+of4*.092122
+of+(1.96*(of/(sqrt(1066))))
+of-(1.96*(of/(sqrt(1066))))
+
+om<-om1*.417872+om2*.305776+om3*.18423+om4*.092122
+om+(1.96*(om/(sqrt(1224))))
+om-(1.96*(om/(sqrt(1224))))
+
+  #totals 
+#0-29 
+ot1<-((otherM$`0-29`+otherF$`0-29`)/27686)*100000 
+(100000/27686)*((otherM$`0-29`+otherF$`0-29`)+(1.96*sqrt((otherM$`0-29`+otherF$`0-29`))))
+(100000/27686)*((otherM$`0-29`+otherF$`0-29`)-(1.96*sqrt((otherM$`0-29`+otherF$`0-29`))))
+#30-49
+ot2<-((otherM$`30-49`+otherF$`30-49`)/18260)*100000
+(100000/18260)*((otherM$`30-49`+otherF$`30-49`)+(1.96*sqrt((otherM$`30-49`+otherF$`30-49`))))
+(100000/18260)*((otherM$`30-49`+otherF$`30-49`)-(1.96*sqrt((otherM$`30-49`+otherF$`30-49`))))
+#50-69
+ot3<-((otherM$`50-69`+otherF$`50-69`)/13843)*100000
+(100000/13843)*((otherM$`50-69`+otherF$`50-69`)+(1.96*sqrt((otherM$`50-69`+otherF$`50-69`))))
+(100000/13843)*((otherM$`50-69`+otherF$`50-69`)-(1.96*sqrt((otherM$`50-69`+otherF$`50-69`))))
+#70+
+ot4<-((otherM$`70+`+otherF$`70+`)/4193)*100000
+(100000/4193)*((otherM$`70+`+otherF$`70+`)+(1.96*sqrt((otherM$`70+`+otherF$`70+`))))
+(100000/4193)*((otherM$`70+`+otherF$`70+`)-(1.96*sqrt((otherM$`70+`+otherF$`70+`))))
+
+#age standardized 
+ot<-ot1*.417872+ot2*.305776+ot3*.18423+ot4*.092122
+ot+(1.96*(ot/(sqrt(2290))))
+ot-(1.96*(ot/(sqrt(2290))))
+
+```
+
+
+
+# Condensed Table of All Numbers
+```{r, include=FALSE}
+#All numbers
+df3
+
+df3_long <- df3[,-(7)]
+
+df3_long <- gather(df3_long, Age_Group, mortality, 1:4, factor_key=FALSE)
+df3_long
+
+pop_sex_race <- read_csv("pop_est_race_sex.csv")
+
+colnames(pop_sex_race)[3] <- "Gender"
+
+df_test <- merge(df3_long, pop_sex_race, by = c("Race", "Gender", "Age_Group"))
+
+df_test$mort_rate <- (df_test$mortality / df_test$Population) * 100000
+
+df_test$upper_bound <- (100000/df_test$Population)*(df_test$mortality + (1.96*sqrt(df_test$mortality)))
+
+df_test$lower_bound <- (100000/df_test$Population)*(df_test$mortality - (1.96*sqrt(df_test$mortality)))
+
+sum(df_test$mortality)
+
+#Could do ANOVA analysis from this dataframe
+
+mod1<-aov(mort_rate~Gender*Race, data=df_test)
+summary(mod1)
+```
+
+# Graph
+```{r, echo=FALSE}
+df_test%>%
+  group_by(Race, Gender)%>%
+  ggplot(aes(fill=Gender, y=mort_rate, x=Race))+
+  geom_bar(position = "dodge", stat="identity")+
+  ggtitle("COVID-19 Age-Standardized Mortality Rate by Age, Ethnicity, Race, and Sex \nin Massachusetts, US Feb 2020-May 2023")+
+  facet_wrap(~Age_Group, scales = "free")+
+  ylab("Mortality Rate Per 100,000")+
+  labs(fill="Sex")+
+  theme_bw() +
+  scale_fill_grey(start = 0.8, end = 0.2) + 
+  labs(caption= " ") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
